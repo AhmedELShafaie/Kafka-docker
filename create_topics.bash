@@ -1,6 +1,7 @@
 #!/usr/bin/env
 
-
+# Add to feature/feature-v1 to create conflict
+#
 docker exec -it broker-1 kafka-topics   \
 --create   \
 --topic order-events   \
