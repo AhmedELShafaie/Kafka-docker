@@ -1,0 +1,15 @@
+version: "3.9"
+
+x-kafka-service: &kafka_common
+  image: nginx:latest
+  restart: unless-stopped
+  logging:
+    driver: "json-file"
+
+services:
+  controller1:
+    <<: *kafka_common
+    ports:
+      - 81:80
+  controller2:
+    <<: *kafka_common

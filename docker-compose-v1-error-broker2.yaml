@@ -1,0 +1,159 @@
+#docker run --rm confluentinc/cp-kafka:8.7.0 kafka-storage random-uuid
+#version: "3.8"
+
+x-kafka-common: &kafka-common
+  image: confluentinc/cp-kafka:8.0.7
+  restart: unless-stopped
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "50m"
+      max-file: "3"
+
+services:
+  # ==========================================
+  # CONTROLLER QUORUM (3 Nodes)
+  # ==========================================
+  controller-1:
+    <<: *kafka-common
+    container_name: controller-1
+    hostname: controller-1
+    environment:
+      CLUSTER_ID: "7-1PfMSrRJyeb-cXHQAV6w"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "controller"
+      KAFKA_LISTENERS: "CONTROLLER://0.0.0.0:9093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@controller-1:9093,2@controller-2:9093,3@controller-3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+    volumes:
+      - controller-1-data:/var/lib/kafka/data
+
+  controller-2:
+    <<: *kafka-common
+    container_name: controller-2
+    hostname: controller-2
+    environment:
+      CLUSTER_ID: "7-1PfMSrRJyeb-cXHQAV6w"
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: "controller"
+      KAFKA_LISTENERS: "CONTROLLER://0.0.0.0:9093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@controller-1:9093,2@controller-2:9093,3@controller-3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+    volumes:
+      - controller-2-data:/var/lib/kafka/data
+
+  controller-3:
+    <<: *kafka-common
+    container_name: controller-3
+    hostname: controller-3
+    environment:
+      CLUSTER_ID: "7-1PfMSrRJyeb-cXHQAV6w"
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: "controller"
+      KAFKA_LISTENERS: "CONTROLLER://0.0.0.0:9093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@controller-1:9093,2@controller-2:9093,3@controller-3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+    volumes:
+      - controller-3-data:/var/lib/kafka/data
+
+  # ==========================================
+  # BROKER NODES (3 Nodes)
+  # ==========================================
+  broker-1:
+    <<: *kafka-common
+    container_name: broker-1
+    hostname: broker-1
+    depends_on:
+      - controller-1
+      - controller-2
+      - controller-3
+    ports:
+      - "9091:9091"
+    environment:
+      CLUSTER_ID: "7-1PfMSrRJyeb-cXHQAV6w"
+      KAFKA_NODE_ID: 101
+      KAFKA_PROCESS_ROLES: "broker"
+      KAFKA_LISTENERS: "BROKER://0.0.0.0:9092,EXTERNAL://0.0.0.0:9091"
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://broker-1:9092,EXTERNAL://localhost:9091"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@controller-1:9093,2@controller-2:9093,3@controller-3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      # Production Resilience Defaults
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    volumes:
+      - broker-1-data:/var/lib/kafka/data
+
+  broker-2:
+    <<: *kafka-common
+    container_name: broker-2
+    hostname: broker-2
+    depends_on:
+      - controller-1
+      - controller-2
+      - controller-3
+    ports:
+      - "9092:9092"
+    environment:
+      CLUSTER_ID: "7-1PfMSrRJyeb-cXHQAV6w"
+      KAFKA_NODE_ID: 102
+      KAFKA_PROCESS_ROLES: "broker"
+      KAFKA_LISTENERS: "BROKER://0.0.0.0:9092,EXTERNAL://0.0.0.0:9092"
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://broker-2:9092,EXTERNAL://localhost:9092"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@controller-1:9093,2@controller-2:9093,3@controller-3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    volumes:
+      - broker-2-data:/var/lib/kafka/data
+
+  broker-3:
+    <<: *kafka-common
+    container_name: broker-3
+    hostname: broker-3
+    depends_on:
+      - controller-1
+      - controller-2
+      - controller-3
+    ports:
+      - "9093:9093"
+    environment:
+      CLUSTER_ID: "7-1PfMSrRJyeb-cXHQAV6w"
+      KAFKA_NODE_ID: 103
+      KAFKA_PROCESS_ROLES: "broker"
+      KAFKA_LISTENERS: "BROKER://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093"
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://broker-3:9092,EXTERNAL://localhost:9093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@controller-1:9093,2@controller-2:9093,3@controller-3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    volumes:
+      - broker-3-data:/var/lib/kafka/data
+
+volumes:
+  controller-1-data:
+  controller-2-data:
+  controller-3-data:
+  broker-1-data:
+  broker-2-data:
+  broker-3-data:
